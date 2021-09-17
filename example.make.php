@@ -22,8 +22,24 @@ function main()
 	]);
 }
 
-function setup() {}
-function build() {}
-function test() {}
+function prepareTest()
+{
+	# code...
+}
+
+function test()
+{
+    requires('prepareTest');
+    # code ...
+}
+
+function setup() {
+	# code ...
+}
+
+function build() {
+	# code ...
+}
+
 
 ?>
