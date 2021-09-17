@@ -1,0 +1,272 @@
+#!/usr/bin/php
+<?php
+
+//
+// ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
+//
+
+function makephp()
+{
+    return MakePHP::$instance;
+}
+
+function requires($functions)
+{
+    return makephp()->requires($functions);
+}
+
+function dependsOn(string $function)
+{
+    return makephp()->requires($functions);
+}
+
+function depends_on(string $function)
+{
+    return makephp()->requires($functions);
+}
+
+function _first(string $function)
+{
+    return makephp()->requires($functions);
+}
+
+set_exception_handler(function ($th) {
+    echo "\033[31m✘ Error:\033[0m " . $th->getMessage() . PHP_EOL;
+});
+
+//
+// ─── LOCATOR CLASS ──────────────────────────────────────────────────────────────
+//
+
+
+/**
+ * Main task is to locate the base directory of a project.
+ * indicated by the {filename} which would be placed in 
+ * the root directory of the project
+ */
+class Locator
+{
+    public static $loopCounter = 0;
+    public static $loopLimit = 200;
+    
+    /**
+     * finds the first instance of the filename
+     *
+     * @param string $filename
+     * @param string|null $current
+     * @return string|null
+     */
+    public static function find(string $filename, $current = null)
+    {
+        self::$loopCounter++;
+
+        if ($current === '/') {
+            return null;
+        }
+
+        if (is_null($current)) {
+            /* If not provided, set it to the current working directory */
+            $current = getcwd();
+        }
+                
+        if (file_exists($current . '/' . $filename)) {
+            return $current;
+        }
+
+        $current = array_filter(explode('/', $current));
+
+        array_pop($current);
+
+        if (self::$loopCounter <= self::$loopLimit) {
+            return self::find($filename, '/' . implode('/', $current));
+        }
+        
+        return null;
+    }
+}
+
+
+//
+// ─── MAKEPHP CLASS ────────────────────────────────────────────────────────────────
+//
+
+
+class MakePHP
+{
+    const MAKE_FILENAME = 'make.php';
+    const ACCESSOR = 'makephp';
+
+    public static $instance;
+
+    public $root;
+    public $functionMap = [];
+    public $callLog = [];
+    public $arguments = [];
+
+    public $header = [
+        '┌┬┐┌─┐┬┌─┌─┐ ┌─┐┬ ┬┌─┐',
+        '│││├─┤├┴┐├┤  ├─┘├─┤├─┘',
+        '┴ ┴┴ ┴┴ ┴└─┘o┴  ┴ ┴┴ '
+    ];
+
+    public $header2 = [
+"                 ___   __        __  ",
+" |\/|  /\  |__/ |__   |__) |__| |__) ",
+" |  | /~~\ |  \ |___ .|    |  | |    "
+    ];
+
+    public function __construct(array $argv)
+    {
+        $this->loadArguments($argv);
+        self::$instance = &$this;
+    }
+
+    public function loadArguments(array $argv)
+    {
+        $arguments = $argv;
+        array_shift($arguments);
+        $this->arguments = $arguments;
+    }
+
+    public function loadMakeFunctions()
+    {
+        $path = $this->root . '/' . self::MAKE_FILENAME;
+
+        /* Add namespace to make file */
+        $content = file($path);
+        $pattern = array('/^(namespace) (.*?);/', '/(<\?php)/', );
+        $replace = array('', '$1 namespace Make;');
+
+        file_put_contents($this->root . '/.pmake.tmp', implode('', preg_replace($pattern, $replace, $content)));
+
+        $initialList = get_defined_functions(true)['user'];
+
+        require_once $this->root . '/.pmake.tmp';
+
+        $this->functionMap = array_values(array_diff(get_defined_functions(true)['user'], $initialList));
+
+        unlink($this->root . '/.pmake.tmp');
+    }
+
+    public function called(string $function)
+    {
+        return in_array($function, $this->callLog, true);
+    }
+
+    public function functionExists(string $function)
+    {
+        return function_exists('make\\' . $function);
+    }
+
+    public function call(string $function)
+    {
+        $functionWithNamespace = 'make\\' . $function;
+
+        if (!$this->functionExists($function)) {
+            throw new Exception('Function "' . $function . '" not defined in ' . self::MAKE_FILENAME . '!', 1);
+        }
+
+        echo "\n> running \033[36;1m{$function}()\033[0m" . PHP_EOL;
+        
+        call_user_func($functionWithNamespace);
+
+        $this->callLog[] = $function;
+    }
+    
+    public function getFirstFunction()
+    {
+        $function = $this->functionMap[0] ?? null;
+        return explode('\\', $function ?? '')[1] ?? null;
+    }
+
+    public static function createProjectFile()
+    {
+        $path = getcwd() . '/' . self::MAKE_FILENAME;
+
+        if (file_exists($path)) {
+            /* Read the user Input and add the question */
+            print("\033[1;34m?\033[0m A " . self::MAKE_FILENAME .  " file already exists in this directory.\n");
+            $replace = readline("  Do you want to replace it? (Y/N) : ");
+            $replace = empty($replace) ? 'y' : $replace;
+            
+            if (strtolower($replace) !== 'y') {
+                die("\033[31mAborting...\033[0m" . PHP_EOL);
+            }
+
+            echo PHP_EOL;
+        }
+ 
+        file_put_contents($path, "<?php\n\nfunction main()\n{\n\t// code...\n}\r\n");
+        echo "\033[32m✓ Successfully created " . self::MAKE_FILENAME .  " file!\033[0m \033[2m\n  (path: {$path})\033[0m;" . PHP_EOL;
+    }
+
+    public function requires($functions, string $term = 'requires')
+    {
+        if (!is_array($functions) && !is_string($functions)) {
+            throw new Exception('Invalid argument type "' . gettype($functions) . '" for requires(). Only strings and string arrays allowed.', 1);
+        }
+
+        if (is_string($functions)) {
+            $functions = [$functions];
+        }
+
+        foreach ($functions as $function) {
+            if (!$this->functionExists($function)) {
+                throw new Exception("Function '{$function}' does not exists in make.php!", 1);
+            }
+
+            if ($this->called($function)) {
+                return;
+            }
+
+            $trace = debug_backtrace();
+            $invoker = explode('\\', $trace[1]['function'])[1];
+
+            echo "\033[33m> \033[36m{$invoker}()\033[0m: {$term} \033[36m{$function}()\033[0m" . PHP_EOL;
+
+            $this->call($function);
+        }
+
+        echo "\n\033[36m> {$invoker}()\033[0m: continues..." . PHP_EOL;
+    }
+
+    public function handle()
+    {
+        if (($this->arguments[0] ?? '') === '--init') {
+            return $this->createProjectFile();
+        }
+
+        $this->root = Locator::find(self::MAKE_FILENAME);
+
+        if (!$this->root) {
+            throw new Exception(self::MAKE_FILENAME .  " file not found!\nFirst create a " . self::MAKE_FILENAME .  " file in your project root directory.\nOr run $ '\033[36;1m" . self::ACCESSOR .  " --init\033[0m' to create it in the current working directory.", 1);
+        }
+
+        $this->loadMakeFunctions();
+
+        if (count($this->arguments) === 0) {
+            $function = $this->getFirstFunction();
+            if ($function === null) {
+                throw new Exception('No functions defined in ' . self::MAKE_FILENAME .  '!', 1);
+            }
+        } else {
+            $function = $this->arguments[0];
+        }
+
+        if (!$this->functionExists($function)) {
+            throw new Exception('Function "' . $function . '" not defined in ' . self::MAKE_FILENAME .  '!', 1);
+        }
+
+        $this->call($function);
+
+        echo "\n\033[32m✓ Successfully finished!\033[0m" . PHP_EOL;
+    }
+}
+
+
+//
+// ─── PROGRAM ────────────────────────────────────────────────────────────────────
+//
+
+$pmake = new MakePHP($argv);
+$pmake->handle();
