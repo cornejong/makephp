@@ -196,7 +196,7 @@ class MakePHP
             echo PHP_EOL;
         }
  
-        file_put_contents($path, "<?php\n\nfunction main()\n{\n\t// code...\n}\r\n");
+        file_put_contents($path, file_get_contents('https://raw.githubusercontent.com/cornejong/makephp/main/example.make.php'));
         echo "\033[32m✓ Successfully created " . self::MAKE_FILENAME .  " file!\033[0m \033[2m\n  (path: {$path})\033[0m;" . PHP_EOL;
     }
 
