@@ -115,13 +115,7 @@ class MakePHP
         '│││├─┤├┴┐├┤  ├─┘├─┤├─┘',
         '┴ ┴┴ ┴┴ ┴└─┘o┴  ┴ ┴┴ '
     ];
-
-    public $header2 = [
-"                 ___   __        __  ",
-" |\/|  /\  |__/ |__   |__) |__| |__) ",
-" |  | /~~\ |  \ |___ .|    |  | |    "
-    ];
-
+    
     public function __construct(array $argv)
     {
         $this->loadArguments($argv);
