@@ -1,6 +1,13 @@
 #!/usr/bin/php
 <?php
 
+/* Sorry windows folks, another time */
+if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+    print("\033[31m✘\033[0m Windows is currently not supported!") . PHP_EOL;
+    exit(1);
+}
+
+
 //
 // ─── FUNCTIONS ──────────────────────────────────────────────────────────────────
 //
@@ -270,3 +277,4 @@ class MakePHP
 
 $pmake = new MakePHP($argv);
 $pmake->handle();
+exit(0);
