@@ -15,7 +15,7 @@ $ chmod +x makephp
 And finally move the makephp file into your preferred bin directory.
 Or let makephp move itself to 'usr/local/bin' by running:
 
-$ makephp --self-install
+$ ./makephp --self-install
 
 ```
 
