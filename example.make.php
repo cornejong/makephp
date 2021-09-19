@@ -15,26 +15,41 @@ function main()
 	/* Define the requirements for this function */
 	/* Either a single function name (as a string) */
 	/* Or an array of function names */
+	/* These functions will be called before the */
+	/* execution of the rest of the function */
     requires([
 		'setup',
 		'build',
 		'test',
 	]);
+
+	/* You van also just run terminal commands */
+	run('git gc --auto');
+	/* Or a list of them */
+	run([
+        'composer install --no-dev',
+        'echo $PATH'
+    ]);
+
+	/* Or if you don't have to do anything after that */
+    return 'git gc --auto';
+	/* Or again, a list of commands */
+	return [
+        'composer install --no-dev',
+        'echo $PATH'
+    ];
 }
 
-function prepareTest()
-{
-	# code...
+function prepareTest() {
+    # code ...
 }
 
-function test()
-{
-    requires('prepareTest');
+function test() {
     # code ...
 }
 
 function setup() {
-	# code ...
+    # code ...
 }
 
 function build() {
