@@ -14,5 +14,8 @@ return [
     'accessor' => MakePHP::ACCESSOR, // Basically the output filename
     'main' => 'main.php', // The main entry file in your project
     'compress' => \Phar::GZ,
+    'ignorable' => [
+        'readme.md'
+    ]
 ];
 
