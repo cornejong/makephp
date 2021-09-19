@@ -37,7 +37,6 @@ $ makephp {functionName}
 
 ```
 
-- accept multiple functions as arguments
 - allow arguments for functions
 
 ```
